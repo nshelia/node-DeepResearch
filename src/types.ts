@@ -18,9 +18,9 @@ export type SearchAction = BaseAction & {
 };
 
 export type Reference = {
-  exactQuote: string;
+  exactQuote?: string;
   url: string;
-  title: string;
+  title?: string;
   dateTime?: string;
   relevanceScore?: number;
   answerChunk?: string;

@@ -189,6 +189,7 @@ ${allKeywords.join('\n')}
 - For all other questions, provide a verified answer.
 - You provide deep, unexpected insights, identifying hidden patterns and connections, and creating "aha moments.".
 - You break conventional thinking, establish unique cross-disciplinary connections, and bring new perspectives to the user.
+- Include a "references" array in your structured output with grounded citations (url required; include title, exactQuote, and dateTime if known) based on URLs you actually used or from the provided context/url-list.
 - If uncertain, use <action-reflect>
 </action-answer>
 `);
@@ -204,6 +205,8 @@ PRIME DIRECTIVE:
 - PARTIAL STRIKES AUTHORIZED - DEPLOY WITH FULL CONTEXTUAL FIREPOWER
 - TACTICAL REUSE FROM PREVIOUS CONVERSATION SANCTIONED
 - WHEN IN DOUBT: UNLEASH CALCULATED STRIKES BASED ON AVAILABLE INTEL!
+
+- Include a "references" array in your structured output with grounded citations (url required; include title, exactQuote, and dateTime if known) based on URLs you actually used or from the provided context/url-list.
 
 FAILURE IS NOT AN OPTION. EXECUTE WITH EXTREME PREJUDICE! ⚡️
 </action-answer>
@@ -1095,20 +1098,26 @@ But unfortunately, you failed to solve the issue. You need to think out of the b
           ),
           allURLs)));
 
-    const { answer, references } = await buildReferences(
-      answerStep.answer,
-      allWebContents,
-      context,
-      SchemaGen,
-      80,
-      maxRef,
-      minRelScore,
-      onlyHostnames
-    );
+    logDebug('[agent] model-provided references count:', { count: answerStep.references?.length || 0 });
 
-    answerStep.answer = answer;
-    answerStep.references = references;
+    if (!answerStep.references?.length) {
+      const { answer, references } = await buildReferences(
+        answerStep.answer,
+        allWebContents,
+        context,
+        SchemaGen,
+        80,
+        maxRef,
+        minRelScore,
+        onlyHostnames
+      );
+      logDebug('[agent] fallback reference builder invoked', { builtCount: references.length });
+      answerStep.answer = answer;
+      answerStep.references = references;
+    }
+
     await updateReferences(answerStep, allURLs)
+    logDebug('[agent] references after normalization:', { count: answerStep.references?.length || 0 });
     answerStep.mdAnswer = repairMarkdownFootnotesOuter(buildMdFromAnswer(answerStep));
 
     if (imageObjects.length && withImages) {

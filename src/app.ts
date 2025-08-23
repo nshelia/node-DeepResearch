@@ -634,15 +634,22 @@ app.post('/v1/chat/completions', validationRules, (async (req: Request, res: Res
     )
     let finalAnswer = (finalStep as AnswerAction).mdAnswer;
 
-    const annotations = (finalStep as AnswerAction).references?.filter(ref => ref?.url && ref?.title && ref?.exactQuote && ref?.dateTime).map(ref => ({
-      type: 'url_citation' as const,
-      url_citation: {
-        title: ref.title,
-        exactQuote: ref.exactQuote,
-        url: ref.url,
-        dateTime: ref.dateTime,
-      }
-    }))
+    const allRefs = (finalStep as AnswerAction).references || [];
+    logDebug('[app] model references before emission:', { count: allRefs.length });
+
+    const annotations = allRefs
+      .filter(ref => !!ref?.url)
+      .map(ref => ({
+        type: 'url_citation' as const,
+        url_citation: {
+          title: ref.title,
+          exactQuote: ref.exactQuote,
+          url: ref.url,
+          dateTime: ref.dateTime,
+        }
+      }));
+
+    logDebug('[app] annotations emitted:', { count: annotations?.length || 0 });
 
 
     if (responseSchema) {
